@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ibento – Student Event Discovery Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<!-- Login Section -->
+<div id="loginSection" class="section active-section">
+    <div class="login-container">
+        <h1 class="logo">Ibento</h1>
+        <p class="subtitle">Student Event Discovery Platform</p>
+        <div class="tabs">
+            <button class="tab-btn active" id="tabStudent" onclick="switchLoginTab('student')">Student Login</button>
+            <button class="tab-btn" id="tabAdmin" onclick="switchLoginTab('admin')">Admin Login</button>
+        </div>
+        <div class="login-card">
+            <h2 id="loginTitle">Student Portal</h2>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" required placeholder="Enter your email">
+                </div>
+                <div class="form-group" style="position: relative;">
+                    <label>Password</label>
+                    <input type="password" id="password" required placeholder="Enter your password">
+                </div>
+                <div class="error-msg" id="loginError"></div>
+                <button type="submit" class="btn primary-btn w-100">Login</button>
+            </form>
+            <div class="demo-creds" id="demoCreds">
+                <small>Demo: student@ibento.com / 1234</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Student Portal -->
+<div id="studentPortal" class="section">
+    <nav class="navbar">
+        <div class="nav-brand">Ibento</div>
+        <div class="hamburger" onclick="toggleMenu('studentMenu')"><i class="fas fa-bars"></i></div>
+        <ul class="nav-links" id="studentMenu">
+            <li><a href="#" class="active" onclick="switchStudentTab('home')">Home</a></li>
+            <li><a href="#" onclick="switchStudentTab('events')">Events</a></li>
+            <li><a href="#" onclick="switchStudentTab('bookmarks')">Bookmarks</a></li>
+            <li><a href="#" onclick="switchStudentTab('upload')">Upload Event</a></li>
+            <li><a href="#" onclick="handleLogout()" class="logout-btn">Logout</a></li>
+        </ul>
+    </nav>
+    
+    <div class="container">
+        <!-- Student Home -->
+        <div id="studentHome" class="student-view active-view">
+            <h2 class="welcome-text">Welcome back, Student! 👋</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="sTotalEvents">0</div>
+                    <div class="stat-label">Total Events</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="sBookmarked">0</div>
+                    <div class="stat-label">Bookmarked Events</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="sInterested">0</div>
+                    <div class="stat-label">Interested Events</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Events -->
+        <div id="studentEvents" class="student-view">
+            <div class="filter-bar">
+                <select id="filterCategory" onchange="renderStudentEvents()">
+                    <option value="">All Categories</option>
+                    <option value="Tech">Tech</option>
+                    <option value="Cultural">Cultural</option>
+                    <option value="Sports">Sports</option>
+                </select>
+                <select id="filterCollege" onchange="renderStudentEvents()">
+                    <option value="">All Colleges</option>
+                    <option value="MIT">MIT</option>
+                    <option value="Harvard">Harvard</option>
+                    <option value="Stanford">Stanford</option>
+                </select>
+            </div>
+            <div class="events-grid" id="eventsContainer"></div>
+        </div>
+
+        <!-- Student Bookmarks -->
+        <div id="studentBookmarks" class="student-view">
+            <h2>Your Bookmarks ⭐</h2>
+            <div class="events-grid" id="bookmarksContainer"></div>
+        </div>
+
+        <!-- Student Upload Event -->
+        <div id="studentUpload" class="student-view">
+            <div class="form-container card">
+                <h2>Propose an Event</h2>
+                <form id="uploadForm" onsubmit="handleEventUpload(event)">
+                    <div class="form-group"><label>Title</label><input type="text" id="upTitle" required></div>
+                    <div class="form-group"><label>College</label>
+                        <select id="upCollege" required>
+                            <option value="MIT">MIT</option>
+                            <option value="Harvard">Harvard</option>
+                            <option value="Stanford">Stanford</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Date (Future)</label><input type="date" id="upDate" required></div>
+                    <div class="form-group"><label>Category</label>
+                        <select id="upCategory" required>
+                            <option value="Tech">Tech</option>
+                            <option value="Cultural">Cultural</option>
+                            <option value="Sports">Sports</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Venue</label><input type="text" id="upVenue" required></div>
+                    <div class="form-group"><label>Poster URL</label><input type="url" id="upPoster" required></div>
+                    <div class="form-group"><label>Registration Link</label><input type="url" id="upLink" required></div>
+                    <div class="form-group"><label>Description</label><textarea id="upDesc" rows="4" required></textarea></div>
+                    <button type="submit" class="btn primary-btn">Submit for Approval</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Portal -->
+<div id="adminPortal" class="section">
+    <nav class="navbar admin-nav">
+        <div class="nav-brand">Ibento Admin</div>
+        <div class="hamburger" onclick="toggleMenu('adminMenu')"><i class="fas fa-bars"></i></div>
+        <ul class="nav-links" id="adminMenu">
+            <li><a href="#" class="active" onclick="switchAdminTab('dashboard')">Dashboard</a></li>
+            <li><a href="#" onclick="switchAdminTab('manage')">Manage Events</a></li>
+            <li><a href="#" onclick="handleLogout()" class="logout-btn">Logout</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <!-- Admin Dashboard -->
+        <div id="adminDashboard" class="admin-view active-view">
+            <h2 class="welcome-text">Admin Dashboard</h2>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-value" id="aTotal">0</div><div class="stat-label">Total Events</div></div>
+                <div class="stat-card"><div class="stat-value" id="aPending">0</div><div class="stat-label">Pending Approvals</div></div>
+                <div class="stat-card"><div class="stat-value" id="aApproved">0</div><div class="stat-label">Approved Events</div></div>
+                <div class="stat-card"><div class="stat-value" id="aUsers">1,245</div><div class="stat-label">Active Users</div></div>
+            </div>
+        </div>
+
+        <!-- Admin Manage Events -->
+        <div id="adminManage" class="admin-view">
+            <h2>Manage Events</h2>
+            <div class="table-responsive card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>College</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminEventsTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Event Details Modal -->
+<div id="eventModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <div id="modalBody"></div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
