@@ -344,31 +344,43 @@ function handleEventUpload(e) {
     e.preventDefault();
     const title = document.getElementById('upTitle').value;
     const date = document.getElementById('upDate').value;
+    const fileInput = document.getElementById('upPoster');
     
-    const events = getEvents();
-    
-    const newEvent = {
-        id: Date.now().toString(),
-        title: title,
-        college: document.getElementById('upCollege').value,
-        date: date,
-        venue: document.getElementById('upVenue').value,
-        category: document.getElementById('upCategory').value,
-        poster: document.getElementById('upPoster').value,
-        link: document.getElementById('upLink').value,
-        desc: document.getElementById('upDesc').value,
-        status: 'Pending',
-        interested: 0
-    };
-    
-    events.push(newEvent);
-    saveEvents(events);
-    
-    alert('Event submitted successfully! Waiting for admin approval.');
-    document.getElementById('uploadForm').reset();
-    switchStudentTab('home');
-    document.querySelectorAll('#studentMenu a').forEach(a => a.classList.remove('active'));
-    document.querySelector(`#studentMenu a[onclick="switchStudentTab('home')"]`).classList.add('active');
+    function saveEventWithPoster(posterData) {
+        const events = getEvents();
+        const newEvent = {
+            id: Date.now().toString(),
+            title: title,
+            college: document.getElementById('upCollege').value,
+            date: date,
+            venue: document.getElementById('upVenue').value,
+            category: document.getElementById('upCategory').value,
+            poster: posterData,
+            link: document.getElementById('upLink').value,
+            desc: document.getElementById('upDesc').value,
+            status: 'Pending',
+            interested: 0
+        };
+        
+        events.push(newEvent);
+        saveEvents(events);
+        
+        alert('Event submitted successfully! Waiting for admin approval.');
+        document.getElementById('uploadForm').reset();
+        switchStudentTab('home');
+        document.querySelectorAll('#studentMenu a').forEach(a => a.classList.remove('active'));
+        document.querySelector(`#studentMenu a[onclick="switchStudentTab('home')"]`).classList.add('active');
+    }
+
+    if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            saveEventWithPoster(evt.target.result);
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    } else {
+        saveEventWithPoster('https://via.placeholder.com/400x200?text=Event+Poster');
+    }
 }
 
 function switchAdminTab(tab) {
