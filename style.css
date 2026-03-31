@@ -103,9 +103,47 @@ body { background: var(--bg); color: var(--text); line-height: 1.6; }
 .team-toggle input { width: 16px; height: 16px; cursor: pointer;}
 
 @media (max-width: 768px) {
-    .hamburger { display: block; }
-    .nav-links { display: none; flex-direction: column; position: absolute; top: 100%; left: 0; width: 100%; background: var(--white); padding: 1rem; box-shadow: var(--shadow); gap: 1rem; }
-    .nav-links.active { display: flex; }
-    .filter-bar { flex-direction: column; }
-    .stats-grid { grid-template-columns: 1fr; }
+    .hamburger { display: none !important; }
+    
+    .nav-links {
+        display: flex !important;
+        flex-direction: row;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: var(--white);
+        padding: 0.8rem 0.2rem;
+        box-shadow: 0 -4px 15px rgba(0,0,0,0.06);
+        gap: 0;
+        justify-content: space-around;
+        z-index: 1000;
+        border-top: 1px solid var(--border);
+    }
+    .nav-links li { flex: 1; text-align: center; }
+    .nav-links a { 
+        font-size: 0.65rem; 
+        padding: 0.5rem 0.2rem; 
+        font-weight: 600; 
+        display: block;
+        white-space: nowrap;
+        border-radius: 8px;
+    }
+    .nav-links a.active { background: #e0e7ff; color: var(--primary); }
+    
+    .container { padding: 1rem; padding-bottom: 100px; }
+    .navbar { padding: 1rem; justify-content: center; }
+    .nav-brand { font-size: 1.3rem; text-align: center; width: 100%; margin: 0; }
+    
+    .filter-bar { flex-direction: column; gap: 0.5rem; }
+    .stats-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .login-card { padding: 1.5rem; }
+    .logo { font-size: 2rem; }
+    .events-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .event-img { height: 160px; }
+    .data-table th, .data-table td { padding: 0.75rem 0.5rem; font-size: 0.85rem; }
+    .action-btn { font-size: 1rem; }
+    .modal-content { padding: 1.5rem; max-height: 80vh; }
+    .modal-title { font-size: 1.25rem; }
+    .tab-btn { padding: 0.6rem 1rem; font-size: 0.9rem; }
 }

@@ -21,7 +21,11 @@
         </div>
         <div class="login-card">
             <h2 id="loginTitle">Student Portal</h2>
-            <form id="loginForm" onsubmit="handleLogin(event)">
+            <form id="loginForm" onsubmit="handleAuth(event)">
+                <div class="form-group" id="nameGroup" style="display: none;">
+                    <label>Full Name</label>
+                    <input type="text" id="fullName" placeholder="Enter your full name">
+                </div>
                 <div class="form-group">
                     <label>Email</label>
                     <input type="email" id="email" required placeholder="Enter your email">
@@ -31,7 +35,10 @@
                     <input type="password" id="password" required placeholder="Enter your password">
                 </div>
                 <div class="error-msg" id="loginError"></div>
-                <button type="submit" class="btn primary-btn w-100">Login</button>
+                <button type="submit" class="btn primary-btn w-100" id="authSubmitBtn">Login</button>
+                <div id="toggleAuthText" style="text-align: center; margin-top: 1rem; font-size: 0.9rem;">
+                    Don't have an account? <a href="#" onclick="toggleAuthMode(event)" style="color: var(--primary); font-weight: 500;">Sign Up</a>
+                </div>
             </form>
             <div class="demo-creds" id="demoCreds">
                 <small>Demo: student@ibento.com / 1234</small>
@@ -83,12 +90,7 @@
                     <option value="Cultural">Cultural</option>
                     <option value="Sports">Sports</option>
                 </select>
-                <select id="filterCollege" onchange="renderStudentEvents()">
-                    <option value="">All Colleges</option>
-                    <option value="MIT">MIT</option>
-                    <option value="Harvard">Harvard</option>
-                    <option value="Stanford">Stanford</option>
-                </select>
+                <input type="text" id="filterCollege" oninput="renderStudentEvents()" placeholder="Search College...">
             </div>
             <div class="events-grid" id="eventsContainer"></div>
         </div>
@@ -105,13 +107,7 @@
                 <h2>Propose an Event</h2>
                 <form id="uploadForm" onsubmit="handleEventUpload(event)">
                     <div class="form-group"><label>Title</label><input type="text" id="upTitle" required></div>
-                    <div class="form-group"><label>College</label>
-                        <select id="upCollege" required>
-                            <option value="MIT">MIT</option>
-                            <option value="Harvard">Harvard</option>
-                            <option value="Stanford">Stanford</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>College</label><input type="text" id="upCollege" required placeholder="Enter college name"></div>
                     <div class="form-group"><label>Date (Future)</label><input type="date" id="upDate" required></div>
                     <div class="form-group"><label>Category</label>
                         <select id="upCategory" required>

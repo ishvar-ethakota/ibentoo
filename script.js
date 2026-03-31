@@ -22,6 +22,14 @@ const saveBookmarks = (bm) => localStorage.setItem('ibento_bookmarks', JSON.stri
 const getInterested = () => JSON.parse(localStorage.getItem('ibento_interested')) || [];
 const saveInterested = (int) => localStorage.setItem('ibento_interested', JSON.stringify(int));
 
+const defaultUsers = [
+    { email: 'student@ibento.com', password: '1234', name: 'Student Demo', role: 'student' },
+    { email: 'admin@ibento.com', password: 'admin123', name: 'Admin Demo', role: 'admin' }
+];
+if (!localStorage.getItem('ibento_users')) { localStorage.setItem('ibento_users', JSON.stringify(defaultUsers)); }
+const getUsers = () => JSON.parse(localStorage.getItem('ibento_users')) || [];
+const saveUsers = (users) => localStorage.setItem('ibento_users', JSON.stringify(users));
+
 let currentUserRole = null;
 let currentLoginTab = 'student';
 
@@ -34,38 +42,88 @@ function switchLoginTab(role) {
     const credsText = role === 'student' ? "Demo: student@ibento.com / 1234" : "Demo: admin@ibento.com / admin123";
     document.getElementById('demoCreds').innerHTML = `<small>${credsText}</small>`;
     
+    const toggleEl = document.getElementById('toggleAuthText');
+    if (toggleEl) {
+        toggleEl.style.display = role === 'admin' ? 'none' : 'block';
+        if (role === 'admin' && typeof isSignUpMode !== 'undefined' && isSignUpMode) toggleAuthMode(new Event('click'));
+    }
+    
     document.getElementById('loginError').textContent = '';
     document.getElementById('loginForm').reset();
 }
 
-function handleLogin(e) {
+let isSignUpMode = false;
+
+function toggleAuthMode(e) {
+    if(e) e.preventDefault();
+    isSignUpMode = !isSignUpMode;
+    const nameGroup = document.getElementById('nameGroup');
+    const btn = document.getElementById('authSubmitBtn');
+    const toggleText = document.getElementById('toggleAuthText');
+    const fullName = document.getElementById('fullName');
+    
+    if (isSignUpMode) {
+        nameGroup.style.display = 'block';
+        fullName.setAttribute('required', 'true');
+        btn.textContent = 'Sign Up';
+        toggleText.innerHTML = `Already have an account? <a href="#" onclick="toggleAuthMode(event)" style="color: var(--primary); font-weight: 500;">Login</a>`;
+        document.getElementById('loginTitle').textContent = 'Create Student Account';
+    } else {
+        nameGroup.style.display = 'none';
+        fullName.removeAttribute('required');
+        btn.textContent = 'Login';
+        toggleText.innerHTML = `Don't have an account? <a href="#" onclick="toggleAuthMode(event)" style="color: var(--primary); font-weight: 500;">Sign Up</a>`;
+        document.getElementById('loginTitle').textContent = 'Student Portal';
+    }
+    document.getElementById('loginError').textContent = '';
+}
+
+function handleAuth(e) {
     e.preventDefault();
-    const email = document.getElementById('email').value;
+    const email = document.getElementById('email').value.trim();
     const pass = document.getElementById('password').value;
     const errorEl = document.getElementById('loginError');
+    const users = getUsers();
 
     if (currentLoginTab === 'student') {
-        if (email === 'student@ibento.com' && pass === '1234') {
-            loginSuccess('student');
+        if (isSignUpMode) {
+            if (users.find(u => u.email === email)) {
+                errorEl.textContent = 'Email already exists!';
+                return;
+            }
+            const name = document.getElementById('fullName').value.trim() || 'Student';
+            users.push({ email, password: pass, name, role: 'student' });
+            saveUsers(users);
+            loginSuccess('student', name);
         } else {
-            errorEl.textContent = 'Invalid student credentials.';
+            const user = users.find(u => u.email === email && u.password === pass && u.role === 'student');
+            if (user) {
+                loginSuccess('student', user.name);
+            } else {
+                errorEl.textContent = 'Invalid student credentials.';
+            }
         }
     } else {
-         if (email === 'admin@ibento.com' && pass === 'admin123') {
-            loginSuccess('admin');
+        const user = users.find(u => u.email === email && u.password === pass && u.role === 'admin');
+        if (user) {
+            loginSuccess('admin', user.name);
         } else {
             errorEl.textContent = 'Invalid admin credentials.';
         }
     }
 }
 
-function loginSuccess(role) {
+function loginSuccess(role, name = '') {
     currentUserRole = role;
-    localStorage.setItem('ibento_session', role);
+    localStorage.setItem('ibento_session', JSON.stringify({role, name}));
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
     document.getElementById(role + 'Portal').classList.add('active-section');
     
-    if(role === 'student'){
+    if(role === 'student') {
+        if (name) {
+            const welcomeEl = document.querySelector('#studentHome .welcome-text');
+            if (welcomeEl) welcomeEl.innerHTML = `Welcome back, ${name.split(' ')[0]}! 👋`;
+        }
         switchStudentTab('home');
     } else {
         switchAdminTab('dashboard');
@@ -78,11 +136,21 @@ function handleLogout() {
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
     document.getElementById('loginSection').classList.add('active-section');
     document.getElementById('loginForm').reset();
+    
+    // Auto-revert to login mode if logged out while in sign-up mode
+    if (typeof isSignUpMode !== 'undefined' && isSignUpMode) toggleAuthMode(new Event('click'));
 }
 
 window.onload = () => {
     const session = localStorage.getItem('ibento_session');
-    if(session) loginSuccess(session);
+    if(session) {
+        try {
+            const data = JSON.parse(session);
+            if (data.role) loginSuccess(data.role, data.name);
+        } catch(e) {
+            loginSuccess(session); // backward compatibility if session was purely string
+        }
+    }
 };
 
 function toggleMenu(menuId) {
@@ -133,8 +201,7 @@ function renderStudentEvents() {
     let events = getEvents().filter(e => e.status === 'Approved');
     
     if (catFilter) events = events.filter(e => e.category === catFilter);
-    if (colFilter) events = events.filter(e => e.college === colFilter);
-    
+    if (colFilter) events = events.filter(e => e.college.toLowerCase().includes(colFilter.toLowerCase()));    
     renderEventCards(events, 'eventsContainer');
 }
 
