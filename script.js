@@ -139,19 +139,31 @@ function handleAuth(e) {
     if (currentLoginTab === 'student') {
         if (isSignUpMode) {
             const phone = document.getElementById('phone').value.trim();
+            const regdno = document.getElementById('regdno').value.trim();
+            const college = document.getElementById('college').value.trim();
+            const name = document.getElementById('fullName').value.trim() || 'Student';
+            
             const phoneRegex = /^[0-9]{10}$/;
             if (!phoneRegex.test(phone)) {
                 errorEl.textContent = 'Please enter a valid 10-digit phone number.';
                 return;
             }
 
-            if (users.find(u => u.email === email)) {
-                errorEl.textContent = 'Email already exists!';
+            if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+                errorEl.textContent = 'Email already registered!';
                 return;
             }
-            const name = document.getElementById('fullName').value.trim() || 'Student';
-            const regdno = document.getElementById('regdno').value.trim();
-            const college = document.getElementById('college').value.trim();
+            
+            if (users.find(u => u.regdno && u.regdno.toLowerCase() === regdno.toLowerCase())) {
+                errorEl.textContent = 'Registration number already registered!';
+                return;
+            }
+            
+            if (users.find(u => u.phone === phone)) {
+                errorEl.textContent = 'Phone number already registered!';
+                return;
+            }
+
             users.push({ email, password: pass, name, regdno, college, phone, role: 'student' });
             saveUsers(users);
             loginSuccess('student', name, email);
