@@ -12,18 +12,45 @@ function getFutureDate(days) {
 }
 
 if (!localStorage.getItem('ibento_events')) { localStorage.setItem('ibento_events', JSON.stringify(initialEvents)); }
-if (!localStorage.getItem('ibento_bookmarks')) { localStorage.setItem('ibento_bookmarks', JSON.stringify([])); }
-if (!localStorage.getItem('ibento_interested')) { localStorage.setItem('ibento_interested', JSON.stringify([])); }
+if (!localStorage.getItem('ibento_bookmarks')) { localStorage.setItem('ibento_bookmarks', JSON.stringify({})); }
+if (!localStorage.getItem('ibento_interested')) { localStorage.setItem('ibento_interested', JSON.stringify({})); }
 
 const getEvents = () => JSON.parse(localStorage.getItem('ibento_events')) || [];
 const saveEvents = (events) => localStorage.setItem('ibento_events', JSON.stringify(events));
-const getBookmarks = () => JSON.parse(localStorage.getItem('ibento_bookmarks')) || [];
-const saveBookmarks = (bm) => localStorage.setItem('ibento_bookmarks', JSON.stringify(bm));
-const getInterested = () => JSON.parse(localStorage.getItem('ibento_interested')) || [];
-const saveInterested = (int) => localStorage.setItem('ibento_interested', JSON.stringify(int));
+
+const getCurrentUserEmail = () => {
+    const sessionStr = localStorage.getItem('ibento_session');
+    if (!sessionStr) return null;
+    try { const session = JSON.parse(sessionStr); return session.email; } catch(e) { return null; }
+};
+
+const getBookmarks = () => {
+    const all = JSON.parse(localStorage.getItem('ibento_bookmarks')) || {};
+    if (Array.isArray(all)) return [];
+    const email = getCurrentUserEmail();
+    return email && all[email] ? all[email] : [];
+};
+const saveBookmarks = (bm) => {
+    let all = JSON.parse(localStorage.getItem('ibento_bookmarks')) || {};
+    if (Array.isArray(all)) all = {};
+    const email = getCurrentUserEmail();
+    if (email) { all[email] = bm; localStorage.setItem('ibento_bookmarks', JSON.stringify(all)); }
+};
+const getInterested = () => {
+    const all = JSON.parse(localStorage.getItem('ibento_interested')) || {};
+    if (Array.isArray(all)) return [];
+    const email = getCurrentUserEmail();
+    return email && all[email] ? all[email] : [];
+};
+const saveInterested = (int) => {
+    let all = JSON.parse(localStorage.getItem('ibento_interested')) || {};
+    if (Array.isArray(all)) all = {};
+    const email = getCurrentUserEmail();
+    if (email) { all[email] = int; localStorage.setItem('ibento_interested', JSON.stringify(all)); }
+};
 
 const defaultUsers = [
-    { email: 'student@ibento.com', password: '1234', name: 'Student Demo', role: 'student' },
+    { email: 'student@ibento.com', password: '1234', name: 'Student Demo', role: 'student', regdno: 'STU001', college: 'MIT' },
     { email: 'admin@ibento.com', password: 'admin123', name: 'Admin Demo', role: 'admin' }
 ];
 if (!localStorage.getItem('ibento_users')) { localStorage.setItem('ibento_users', JSON.stringify(defaultUsers)); }
@@ -58,19 +85,37 @@ function toggleAuthMode(e) {
     if(e) e.preventDefault();
     isSignUpMode = !isSignUpMode;
     const nameGroup = document.getElementById('nameGroup');
+    const regdnoGroup = document.getElementById('regdnoGroup');
+    const collegeGroup = document.getElementById('collegeGroup');
+    const phoneGroup = document.getElementById('phoneGroup');
     const btn = document.getElementById('authSubmitBtn');
     const toggleText = document.getElementById('toggleAuthText');
     const fullName = document.getElementById('fullName');
+    const regdno = document.getElementById('regdno');
+    const college = document.getElementById('college');
+    const phone = document.getElementById('phone');
     
     if (isSignUpMode) {
         nameGroup.style.display = 'block';
+        regdnoGroup.style.display = 'block';
+        collegeGroup.style.display = 'block';
+        phoneGroup.style.display = 'block';
         fullName.setAttribute('required', 'true');
+        regdno.setAttribute('required', 'true');
+        college.setAttribute('required', 'true');
+        phone.setAttribute('required', 'true');
         btn.textContent = 'Sign Up';
         toggleText.innerHTML = `Already have an account? <a href="#" onclick="toggleAuthMode(event)" style="color: var(--primary); font-weight: 500;">Login</a>`;
         document.getElementById('loginTitle').textContent = 'Create Student Account';
     } else {
         nameGroup.style.display = 'none';
+        regdnoGroup.style.display = 'none';
+        collegeGroup.style.display = 'none';
+        phoneGroup.style.display = 'none';
         fullName.removeAttribute('required');
+        regdno.removeAttribute('required');
+        college.removeAttribute('required');
+        phone.removeAttribute('required');
         btn.textContent = 'Login';
         toggleText.innerHTML = `Don't have an account? <a href="#" onclick="toggleAuthMode(event)" style="color: var(--primary); font-weight: 500;">Sign Up</a>`;
         document.getElementById('loginTitle').textContent = 'Student Portal';
@@ -85,20 +130,35 @@ function handleAuth(e) {
     const errorEl = document.getElementById('loginError');
     const users = getUsers();
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        errorEl.textContent = 'Please enter a valid email address.';
+        return;
+    }
+
     if (currentLoginTab === 'student') {
         if (isSignUpMode) {
+            const phone = document.getElementById('phone').value.trim();
+            const phoneRegex = /^[0-9]{10}$/;
+            if (!phoneRegex.test(phone)) {
+                errorEl.textContent = 'Please enter a valid 10-digit phone number.';
+                return;
+            }
+
             if (users.find(u => u.email === email)) {
                 errorEl.textContent = 'Email already exists!';
                 return;
             }
             const name = document.getElementById('fullName').value.trim() || 'Student';
-            users.push({ email, password: pass, name, role: 'student' });
+            const regdno = document.getElementById('regdno').value.trim();
+            const college = document.getElementById('college').value.trim();
+            users.push({ email, password: pass, name, regdno, college, phone, role: 'student' });
             saveUsers(users);
-            loginSuccess('student', name);
+            loginSuccess('student', name, email);
         } else {
             const user = users.find(u => u.email === email && u.password === pass && u.role === 'student');
             if (user) {
-                loginSuccess('student', user.name);
+                loginSuccess('student', user.name, user.email);
             } else {
                 errorEl.textContent = 'Invalid student credentials.';
             }
@@ -106,16 +166,16 @@ function handleAuth(e) {
     } else {
         const user = users.find(u => u.email === email && u.password === pass && u.role === 'admin');
         if (user) {
-            loginSuccess('admin', user.name);
+            loginSuccess('admin', user.name, user.email);
         } else {
             errorEl.textContent = 'Invalid admin credentials.';
         }
     }
 }
 
-function loginSuccess(role, name = '') {
+function loginSuccess(role, name = '', email = '') {
     currentUserRole = role;
-    localStorage.setItem('ibento_session', JSON.stringify({role, name}));
+    localStorage.setItem('ibento_session', JSON.stringify({role, name, email}));
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
     document.getElementById(role + 'Portal').classList.add('active-section');
     
@@ -146,7 +206,7 @@ window.onload = () => {
     if(session) {
         try {
             const data = JSON.parse(session);
-            if (data.role) loginSuccess(data.role, data.name);
+            if (data.role) loginSuccess(data.role, data.name, data.email);
         } catch(e) {
             loginSuccess(session); // backward compatibility if session was purely string
         }
@@ -169,6 +229,7 @@ function switchStudentTab(tab) {
     if(tab === 'home') renderStudentDashboard();
     if(tab === 'events') renderStudentEvents();
     if(tab === 'bookmarks') renderBookmarks();
+    if(tab === 'connect') renderConnect();
 }
 
 function calculateCountdown(dateStr) {
@@ -209,6 +270,70 @@ function renderBookmarks() {
     const bms = getBookmarks();
     const events = getEvents().filter(e => e.status === 'Approved' && bms.includes(e.id));
     renderEventCards(events, 'bookmarksContainer');
+}
+
+function renderConnect() {
+    const container = document.getElementById('connectContainer');
+    container.innerHTML = '';
+    
+    const email = getCurrentUserEmail();
+    if (!email) return;
+    
+    const myInt = getInterested();
+    if (myInt.length === 0) {
+        container.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-light); padding: 2rem;">You haven't shown interest in any events yet.</p>`;
+        return;
+    }
+    
+    const users = getUsers();
+    const me = users.find(u => u.email === email);
+    if (!me || !me.college) return;
+    
+    const allInt = JSON.parse(localStorage.getItem('ibento_interested')) || {};
+    const allEvents = getEvents();
+    
+    let matesFound = false;
+    
+    users.forEach(u => {
+        if (u.email === email || (u.college || '').toLowerCase() !== me.college.toLowerCase()) return;
+        
+        const theirInt = allInt[u.email] || [];
+        const commonEvents = theirInt.filter(id => myInt.includes(id));
+        
+        if (commonEvents.length > 0) {
+            matesFound = true;
+            commonEvents.forEach(eventId => {
+                const ev = allEvents.find(e => e.id === eventId);
+                if(!ev) return;
+                
+                const card = `
+                    <div class="connect-card">
+                        <div class="connect-header">
+                            <div class="connect-avatar">${u.name.charAt(0).toUpperCase()}</div>
+                            <div class="connect-user-info">
+                                <h4>${u.name}</h4>
+                                <p><i class="fas fa-id-card"></i> ${u.regdno || 'N/A'}</p>
+                            </div>
+                        </div>
+                        <div class="connect-event">
+                            <strong>Also attending:</strong>
+                            ${ev.title}
+                        </div>
+                        <div class="connect-action">
+                            <a href="mailto:${u.email}?subject=Interested%20in%20attending%20${encodeURIComponent(ev.title)}%20together" class="btn primary-btn">
+                                <i class="fas fa-envelope"></i> Connect via Email
+                            </a>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+    });
+    
+    if (!matesFound) {
+        container.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-light); padding: 2rem;">No mates from your college are attending your interested events yet.</p>`;
+    }
 }
 
 function renderEventCards(events, containerId) {
